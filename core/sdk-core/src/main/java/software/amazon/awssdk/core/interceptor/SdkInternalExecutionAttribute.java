@@ -18,6 +18,7 @@ package software.amazon.awssdk.core.interceptor;
 import software.amazon.awssdk.annotations.SdkProtectedApi;
 import software.amazon.awssdk.core.interceptor.trait.HttpChecksum;
 import software.amazon.awssdk.core.interceptor.trait.HttpChecksumRequired;
+import software.amazon.awssdk.core.rules.model.Endpoint;
 import software.amazon.awssdk.http.SdkHttpExecutionAttributes;
 import software.amazon.awssdk.utils.AttributeMap;
 
@@ -70,6 +71,12 @@ public final class SdkInternalExecutionAttribute extends SdkExecutionAttribute {
      */
     public static final ExecutionAttribute<Object> ENDPOINT_PROVIDER =
         new ExecutionAttribute<>("EndpointProvider");
+
+
+    /**
+     * The endpoint provider used to resolve the destination endpoint for a request.
+     */
+    public static final ExecutionAttribute<Endpoint> ENDPOINT = new ExecutionAttribute<>("Endpoint");
 
     public static final ExecutionAttribute<AttributeMap> CLIENT_CONTEXT_PARAMS =
         new ExecutionAttribute<>("ClientContextParams");
