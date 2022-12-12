@@ -286,6 +286,15 @@ public final class CopyObjectHelper {
         CompletableFuture<CopyObjectResponse> copyObjectFuture =
             s3AsyncClient.copyObject(copyObjectRequest);
         CompletableFutureUtils.forwardExceptionTo(returnFuture, copyObjectFuture);
-        CompletableFutureUtils.forwardResultTo(copyObjectFuture, returnFuture);
+
+        copyObjectFuture.whenComplete((r, e) -> {
+            if (e != null) {
+                log.error(() -> "returnFuture completes exceptionally", e);
+                returnFuture.completeExceptionally(e);
+            } else {
+                log.info(() -> "returnFuture completes successfully", e);
+                returnFuture.complete(r);
+            }
+        });
     }
 }
