@@ -58,6 +58,12 @@ public final class AwsExecutionAttribute extends SdkExecutionAttribute {
     public static final ExecutionAttribute<Boolean> USE_GLOBAL_ENDPOINT =
         new ExecutionAttribute<>("UseGlobalEndpoint");
 
+    /**
+     * A resolved accountId associated with credentials
+     */
+    public static final ExecutionAttribute<String> AWS_ACCOUNT_ID =
+        new ExecutionAttribute<>("AwsAccountId");
+
     private AwsExecutionAttribute() {
     }
 }

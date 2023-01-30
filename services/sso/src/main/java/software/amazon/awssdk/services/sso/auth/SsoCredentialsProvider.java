@@ -107,6 +107,7 @@ public final class SsoCredentialsProvider implements AwsCredentialsProvider, Sdk
         AwsSessionCredentials sessionCredentials = AwsSessionCredentials.create(roleCredentials.accessKeyId(),
                                                                                 roleCredentials.secretAccessKey(),
                                                                                 roleCredentials.sessionToken());
+        sessionCredentials.accountId(request.accountId());
         return new SessionCredentialsHolder(sessionCredentials, Instant.ofEpochMilli(roleCredentials.expiration()));
     }
 

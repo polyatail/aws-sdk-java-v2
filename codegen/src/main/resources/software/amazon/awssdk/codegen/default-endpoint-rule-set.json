@@ -12,6 +12,12 @@
       "required": false,
       "documentation": "Override the endpoint used to send this request",
       "type": "String"
+    },
+    "AccountId": {
+      "builtIn": "SDK::AccountId",
+      "required": false,
+      "documentation": "Override the endpoint used to send this request",
+      "type": "String"
     }
   },
   "rules": [

@@ -58,6 +58,7 @@ public final class QueryResolveEndpointInterceptor implements ExecutionIntercept
         builder.region(AwsEndpointProviderUtils.regionBuiltIn(executionAttributes));
         builder.useDualStackEndpoint(AwsEndpointProviderUtils.dualStackEnabledBuiltIn(executionAttributes));
         builder.useFipsEndpoint(AwsEndpointProviderUtils.fipsEnabledBuiltIn(executionAttributes));
+        builder.awsAccountId(AwsEndpointProviderUtils.accountIdBuiltIn(executionAttributes));
         return builder.build();
     }
 

@@ -17,9 +17,11 @@ package software.amazon.awssdk.awscore.internal.authcontext;
 
 import java.time.Duration;
 import software.amazon.awssdk.annotations.SdkInternalApi;
+import software.amazon.awssdk.auth.credentials.AwsAccountIdProvider;
 import software.amazon.awssdk.auth.credentials.AwsCredentials;
 import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider;
 import software.amazon.awssdk.auth.signer.AwsSignerExecutionAttribute;
+import software.amazon.awssdk.awscore.AwsExecutionAttribute;
 import software.amazon.awssdk.awscore.AwsRequestOverrideConfiguration;
 import software.amazon.awssdk.core.RequestOverrideConfiguration;
 import software.amazon.awssdk.core.SdkRequest;
@@ -29,6 +31,7 @@ import software.amazon.awssdk.core.metrics.CoreMetric;
 import software.amazon.awssdk.core.signer.Signer;
 import software.amazon.awssdk.metrics.MetricCollector;
 import software.amazon.awssdk.utils.Pair;
+import software.amazon.awssdk.utils.StringUtils;
 import software.amazon.awssdk.utils.Validate;
 
 /**
@@ -75,6 +78,12 @@ public final class AwsCredentialsAuthorizationStrategy implements AuthorizationS
     public void addCredentialsToExecutionAttributes(ExecutionAttributes executionAttributes) {
         AwsCredentialsProvider credentialsProvider = resolveCredentialsProvider(request, defaultCredentialsProvider);
         AwsCredentials credentials = resolveCredentials(credentialsProvider, metricCollector);
+        if (credentials instanceof AwsAccountIdProvider) {
+            String accountId = ((AwsAccountIdProvider) credentials).accountIdFromCredentials();
+            if (!StringUtils.isBlank(accountId)) {
+                executionAttributes.putAttribute(AwsExecutionAttribute.AWS_ACCOUNT_ID, accountId);
+            }
+        }
         executionAttributes.putAttribute(AwsSignerExecutionAttribute.AWS_CREDENTIALS, credentials);
     }
 

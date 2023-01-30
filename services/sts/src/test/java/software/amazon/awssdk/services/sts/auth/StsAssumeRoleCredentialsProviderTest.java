@@ -16,8 +16,10 @@
 package software.amazon.awssdk.services.sts.auth;
 
 import software.amazon.awssdk.services.sts.StsClient;
+import software.amazon.awssdk.services.sts.endpoints.internal.Arn;
 import software.amazon.awssdk.services.sts.model.AssumeRoleRequest;
 import software.amazon.awssdk.services.sts.model.AssumeRoleResponse;
+import software.amazon.awssdk.services.sts.model.AssumedRoleUser;
 import software.amazon.awssdk.services.sts.model.Credentials;
 
 /**
@@ -32,7 +34,11 @@ public class StsAssumeRoleCredentialsProviderTest extends StsCredentialsProvider
 
     @Override
     protected AssumeRoleResponse getResponse(Credentials credentials) {
-        return AssumeRoleResponse.builder().credentials(credentials).build();
+        String arn = "arn:aws:sts::123456789012:assumed-role/my-role-name/my-role-session-name";
+        return AssumeRoleResponse.builder()
+                                 .credentials(credentials)
+                                 .assumedRoleUser(AssumedRoleUser.builder().arn(arn).build())
+                                 .build();
     }
 
     @Override

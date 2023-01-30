@@ -28,11 +28,13 @@ import software.amazon.awssdk.utils.Validate;
  */
 @Immutable
 @SdkPublicApi
-public final class AwsSessionCredentials implements AwsCredentials {
+public final class AwsSessionCredentials implements AwsCredentials, AwsAccountIdProvider {
 
     private final String accessKeyId;
     private final String secretAccessKey;
     private final String sessionToken;
+
+    private String accountId;
 
     private AwsSessionCredentials(String accessKey, String secretKey, String sessionToken) {
         this.accessKeyId = Validate.paramNotNull(accessKey, "accessKey");
@@ -105,5 +107,14 @@ public final class AwsSessionCredentials implements AwsCredentials {
         hashCode = 31 * hashCode + Objects.hashCode(secretAccessKey());
         hashCode = 31 * hashCode + Objects.hashCode(sessionToken());
         return hashCode;
+    }
+
+    @Override
+    public String accountIdFromCredentials() {
+        return accountId;
+    }
+
+    public void accountId(String accountId) {
+        this.accountId = accountId;
     }
 }

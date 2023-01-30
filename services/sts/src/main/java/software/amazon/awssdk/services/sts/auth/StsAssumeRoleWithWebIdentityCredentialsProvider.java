@@ -24,7 +24,9 @@ import software.amazon.awssdk.annotations.SdkPublicApi;
 import software.amazon.awssdk.annotations.ThreadSafe;
 import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider;
 import software.amazon.awssdk.services.sts.StsClient;
+import software.amazon.awssdk.services.sts.endpoints.internal.Arn;
 import software.amazon.awssdk.services.sts.model.AssumeRoleWithWebIdentityRequest;
+import software.amazon.awssdk.services.sts.model.AssumeRoleWithWebIdentityResponse;
 import software.amazon.awssdk.services.sts.model.Credentials;
 import software.amazon.awssdk.utils.ToString;
 import software.amazon.awssdk.utils.builder.ToCopyableBuilder;
@@ -67,10 +69,16 @@ public final class StsAssumeRoleWithWebIdentityCredentialsProvider
     }
 
     @Override
-    protected Credentials getUpdatedCredentials(StsClient stsClient) {
+    protected SessionCredentialsHolder getUpdatedCredentials(StsClient stsClient) {
         AssumeRoleWithWebIdentityRequest request = assumeRoleWithWebIdentityRequest.get();
         notNull(request, "AssumeRoleWithWebIdentityRequest can't be null");
-        return stsClient.assumeRoleWithWebIdentity(request).credentials();
+        AssumeRoleWithWebIdentityResponse assumeRoleWithWebIdentityResponse = stsClient.assumeRoleWithWebIdentity(request);
+        return SessionCredentialsHolder.builder()
+                                       .credentials(assumeRoleWithWebIdentityResponse.credentials())
+                                       .accountId(Arn.parse(assumeRoleWithWebIdentityResponse.assumedRoleUser().arn())
+                                                     .map(Arn::accountId)
+                                                     .orElse(null))
+                                       .build();
     }
 
     @Override

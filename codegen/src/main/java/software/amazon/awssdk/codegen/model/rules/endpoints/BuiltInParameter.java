@@ -22,6 +22,7 @@ public enum BuiltInParameter {
     AWS_REGION,
     AWS_USE_DUAL_STACK,
     AWS_USE_FIPS,
+    AWS_ACCOUNT_ID,
     SDK_ENDPOINT,
     AWS_STS_USE_GLOBAL_ENDPOINT,
     AWS_S3_FORCE_PATH_STYLE,
@@ -43,6 +44,8 @@ public enum BuiltInParameter {
                 return AWS_USE_FIPS;
             case "sdk::endpoint":
                 return SDK_ENDPOINT;
+            case "aws::accountid":
+                return AWS_ACCOUNT_ID;
             case "aws::sts::useglobalendpoint":
                 return AWS_STS_USE_GLOBAL_ENDPOINT;
             case "aws::s3::forcepathstyle":

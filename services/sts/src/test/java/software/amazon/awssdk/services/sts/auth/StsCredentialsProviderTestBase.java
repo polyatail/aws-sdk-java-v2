@@ -129,6 +129,10 @@ public abstract class StsCredentialsProviderTestBase<RequestT, ResponseT> {
                 assertThat(providedCredentials.accessKeyId()).isEqualTo("a");
                 assertThat(providedCredentials.secretAccessKey()).isEqualTo("b");
                 assertThat(providedCredentials.sessionToken()).isEqualTo("c");
+                if (credentialsProvider instanceof StsAssumeRoleCredentialsProvider) {
+                    assertThat(providedCredentials.accountIdFromCredentials()).isNotNull();
+                    System.out.println(providedCredentials.accountIdFromCredentials());
+                }
             }
         }
     }
