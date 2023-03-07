@@ -25,6 +25,7 @@ import java.util.function.Supplier;
 import software.amazon.awssdk.annotations.SdkProtectedApi;
 import software.amazon.awssdk.annotations.SdkTestInternalApi;
 import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider;
+import software.amazon.awssdk.auth.credentials.CredentialUtils;
 import software.amazon.awssdk.auth.credentials.DefaultCredentialsProvider;
 import software.amazon.awssdk.awscore.client.config.AwsAdvancedClientOption;
 import software.amazon.awssdk.awscore.client.config.AwsClientOption;
@@ -48,6 +49,8 @@ import software.amazon.awssdk.core.retry.RetryMode;
 import software.amazon.awssdk.core.retry.RetryPolicy;
 import software.amazon.awssdk.http.SdkHttpClient;
 import software.amazon.awssdk.http.async.SdkAsyncHttpClient;
+import software.amazon.awssdk.identity.spi.AwsCredentialsIdentity;
+import software.amazon.awssdk.identity.spi.IdentityProvider;
 import software.amazon.awssdk.profiles.ProfileFile;
 import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.regions.ServiceMetadata;
@@ -427,6 +430,16 @@ public abstract class AwsDefaultClientBuilder<BuilderT extends AwsClientBuilder<
 
     public final void setCredentialsProvider(AwsCredentialsProvider credentialsProvider) {
         credentialsProvider(credentialsProvider);
+    }
+
+    @Override
+    public final BuilderT credentialsProvider(IdentityProvider<? extends AwsCredentialsIdentity> identityProvider) {
+        clientConfiguration.option(AwsClientOption.CREDENTIALS_PROVIDER, CredentialUtils.convert(identityProvider));
+        return thisBuilder();
+    }
+
+    public void setCredentialsProvider(IdentityProvider<? extends AwsCredentialsIdentity> identityProvider) {
+        credentialsProvider(identityProvider);
     }
 
     private List<ExecutionInterceptor> addAwsInterceptors(SdkClientConfiguration config) {

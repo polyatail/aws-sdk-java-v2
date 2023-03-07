@@ -16,6 +16,9 @@
 package software.amazon.awssdk.auth.credentials;
 
 import software.amazon.awssdk.annotations.SdkProtectedApi;
+import software.amazon.awssdk.identity.spi.AwsCredentialsIdentity;
+import software.amazon.awssdk.identity.spi.AwsSessionCredentialsIdentity;
+import software.amazon.awssdk.identity.spi.IdentityProvider;
 
 @SdkProtectedApi
 public final class CredentialUtils {
@@ -29,5 +32,22 @@ public final class CredentialUtils {
      */
     public static boolean isAnonymous(AwsCredentials credentials) {
         return credentials.secretAccessKey() == null && credentials.accessKeyId() == null;
+    }
+
+    public static AwsCredentialsProvider convert(IdentityProvider<? extends AwsCredentialsIdentity> identityProvider) {
+
+        return () -> {
+            // TODO: Exception handling for CompletionException thrown from join?
+            AwsCredentialsIdentity awsCredentialsIdentity = identityProvider.resolveIdentity().join();
+            // identity-spi defines 2 known types - AwsCredentialsIdentity and a sub-type AwsSessionCredentialsIdentity
+            if (awsCredentialsIdentity instanceof AwsSessionCredentialsIdentity) {
+                AwsSessionCredentialsIdentity awsSessionCredentialsIdentity = (AwsSessionCredentialsIdentity) awsCredentialsIdentity;
+                return AwsSessionCredentials.create(awsSessionCredentialsIdentity.accessKeyId(),
+                                                    awsSessionCredentialsIdentity.secretAccessKey(),
+                                                    awsSessionCredentialsIdentity.sessionToken());
+            }
+            return AwsBasicCredentials.create(awsCredentialsIdentity.accessKeyId(),
+                                              awsCredentialsIdentity.secretAccessKey());
+        };
     }
 }
