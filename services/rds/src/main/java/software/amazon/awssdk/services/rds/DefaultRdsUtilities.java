@@ -21,12 +21,15 @@ import java.time.Instant;
 import software.amazon.awssdk.annotations.Immutable;
 import software.amazon.awssdk.annotations.SdkInternalApi;
 import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider;
+import software.amazon.awssdk.auth.credentials.CredentialUtils;
 import software.amazon.awssdk.auth.signer.Aws4Signer;
 import software.amazon.awssdk.auth.signer.params.Aws4PresignerParams;
 import software.amazon.awssdk.awscore.client.config.AwsClientOption;
 import software.amazon.awssdk.core.client.config.SdkClientConfiguration;
 import software.amazon.awssdk.http.SdkHttpFullRequest;
 import software.amazon.awssdk.http.SdkHttpMethod;
+import software.amazon.awssdk.identity.spi.AwsCredentialsIdentity;
+import software.amazon.awssdk.identity.spi.IdentityProvider;
 import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.rds.model.GenerateAuthenticationTokenRequest;
 import software.amazon.awssdk.utils.StringUtils;
@@ -39,7 +42,7 @@ final class DefaultRdsUtilities implements RdsUtilities {
 
     private final Aws4Signer signer = Aws4Signer.create();
     private final Region region;
-    private final AwsCredentialsProvider credentialsProvider;
+    private final IdentityProvider<? extends AwsCredentialsIdentity> credentialsProvider;
     private final Clock clock;
 
     DefaultRdsUtilities(DefaultBuilder builder) {
@@ -111,7 +114,9 @@ final class DefaultRdsUtilities implements RdsUtilities {
         }
 
         if (this.credentialsProvider != null) {
-            return this.credentialsProvider;
+            // TODO: Instead of creating provider, instead resolve actually credentials right here and return that to set in
+            //  Aws4PresignerParams?
+            return CredentialUtils.convert(this.credentialsProvider);
         }
 
         throw new IllegalArgumentException("CredentialProvider should be provided either in GenerateAuthenticationTokenRequest " +
@@ -121,13 +126,14 @@ final class DefaultRdsUtilities implements RdsUtilities {
     @SdkInternalApi
     static final class DefaultBuilder implements Builder {
         private Region region;
-        private AwsCredentialsProvider credentialsProvider;
+        private IdentityProvider<? extends AwsCredentialsIdentity> credentialsProvider;
 
         DefaultBuilder() {
         }
 
         Builder clientConfiguration(SdkClientConfiguration clientConfiguration) {
-            this.credentialsProvider = clientConfiguration.option(AwsClientOption.CREDENTIALS_PROVIDER);
+            // TODO: update
+            this.credentialsProvider = clientConfiguration.option(AwsClientOption.CREDENTIALS_IDENTITY_PROVIDER);
             this.region = clientConfiguration.option(AwsClientOption.AWS_REGION);
 
             return this;
@@ -139,8 +145,9 @@ final class DefaultRdsUtilities implements RdsUtilities {
             return this;
         }
 
+        // TODO: {@link #credentialsProvider(AwsCredentialsProvider)} uses the default implementation which call this
         @Override
-        public Builder credentialsProvider(AwsCredentialsProvider credentialsProvider) {
+        public Builder credentialsProvider(IdentityProvider<? extends AwsCredentialsIdentity> credentialsProvider) {
             this.credentialsProvider = credentialsProvider;
             return this;
         }

@@ -43,6 +43,8 @@ import software.amazon.awssdk.core.interceptor.SdkInternalExecutionAttribute;
 import software.amazon.awssdk.core.internal.InternalCoreExecutionAttribute;
 import software.amazon.awssdk.core.internal.util.HttpChecksumResolver;
 import software.amazon.awssdk.core.signer.Signer;
+import software.amazon.awssdk.identity.spi.AwsCredentialsIdentity;
+import software.amazon.awssdk.identity.spi.IdentityProvider;
 import software.amazon.awssdk.metrics.MetricCollector;
 
 @SdkInternalApi
@@ -139,13 +141,13 @@ public final class AwsExecutionContextBuilder {
     }
 
     /**
-     * Resolves the credentials provider, with the request override configuration taking precedence over the
-     * provided default.
+     * Resolves the credentials provider, with the request override configuration taking precedence over the provided default.
      *
      * @return The credentials provider that will be used by the SDK to resolve credentials
      */
-    public static AwsCredentialsProvider resolveCredentialsProvider(SdkRequest originalRequest,
-                                                                    AwsCredentialsProvider defaultProvider) {
+    // TODO: This method seems unused. Should defaultProvider's type change? Should flatMap use credentialsIdentityProvider
+    public static IdentityProvider<? extends AwsCredentialsIdentity> resolveCredentialsProvider(
+            SdkRequest originalRequest, AwsCredentialsProvider defaultProvider) {
         return originalRequest.overrideConfiguration()
                               .filter(c -> c instanceof AwsRequestOverrideConfiguration)
                               .map(c -> (AwsRequestOverrideConfiguration) c)
