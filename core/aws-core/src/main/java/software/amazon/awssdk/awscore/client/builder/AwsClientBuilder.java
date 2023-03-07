@@ -19,6 +19,8 @@ import software.amazon.awssdk.annotations.SdkPublicApi;
 import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider;
 import software.amazon.awssdk.awscore.defaultsmode.DefaultsMode;
 import software.amazon.awssdk.core.client.builder.SdkClientBuilder;
+import software.amazon.awssdk.identity.spi.AwsCredentialsIdentity;
+import software.amazon.awssdk.identity.spi.IdentityProvider;
 import software.amazon.awssdk.regions.Region;
 
 /**
@@ -50,7 +52,13 @@ public interface AwsClientBuilder<BuilderT extends AwsClientBuilder<BuilderT, Cl
      * <p>If the credentials are not found in any of the locations above, an exception will be thrown at {@link #build()} time.
      * </p>
      */
-    BuilderT credentialsProvider(AwsCredentialsProvider credentialsProvider);
+    default BuilderT credentialsProvider(AwsCredentialsProvider credentialsProvider) {
+        return credentialsProvider((IdentityProvider<AwsCredentialsIdentity>) credentialsProvider);
+    }
+
+    default BuilderT credentialsProvider(IdentityProvider<? extends AwsCredentialsIdentity> credentialsProvider) {
+        throw new UnsupportedOperationException();
+    }
 
     /**
      * Configure the region with which the SDK should communicate.

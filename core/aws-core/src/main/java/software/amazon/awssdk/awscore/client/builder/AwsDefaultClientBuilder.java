@@ -48,6 +48,8 @@ import software.amazon.awssdk.core.retry.RetryMode;
 import software.amazon.awssdk.core.retry.RetryPolicy;
 import software.amazon.awssdk.http.SdkHttpClient;
 import software.amazon.awssdk.http.async.SdkAsyncHttpClient;
+import software.amazon.awssdk.identity.spi.AwsCredentialsIdentity;
+import software.amazon.awssdk.identity.spi.IdentityProvider;
 import software.amazon.awssdk.profiles.ProfileFile;
 import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.regions.ServiceMetadata;
@@ -191,7 +193,7 @@ public abstract class AwsDefaultClientBuilder<BuilderT extends AwsClientBuilder<
         configuration = mergeSmartDefaults(configuration);
 
         return configuration.toBuilder()
-                            .option(AwsClientOption.CREDENTIALS_PROVIDER, resolveCredentials(configuration))
+                            .option(AwsClientOption.CREDENTIALS_IDENTITY_PROVIDER, resolveCredentialsIdentity(configuration))
                             .option(SdkClientOption.ENDPOINT, resolveEndpoint(configuration))
                             .option(SdkClientOption.EXECUTION_INTERCEPTORS, addAwsInterceptors(configuration))
                             .option(AwsClientOption.SIGNING_REGION, resolveSigningRegion(configuration))
@@ -349,13 +351,20 @@ public abstract class AwsDefaultClientBuilder<BuilderT extends AwsClientBuilder<
     /**
      * Resolve the credentials that should be used based on the customer's configuration.
      */
-    private AwsCredentialsProvider resolveCredentials(SdkClientConfiguration config) {
-        return config.option(AwsClientOption.CREDENTIALS_PROVIDER) != null
-               ? config.option(AwsClientOption.CREDENTIALS_PROVIDER)
-               : DefaultCredentialsProvider.builder()
-                                           .profileFile(config.option(SdkClientOption.PROFILE_FILE_SUPPLIER))
-                                           .profileName(config.option(SdkClientOption.PROFILE_NAME))
-                                           .build();
+    private IdentityProvider<? extends AwsCredentialsIdentity> resolveCredentialsIdentity(SdkClientConfiguration config) {
+        // Note, with this logic, both options could still be set, but is validated later in AwsClientOptionValidation
+        // TODO: is that too late? Should the validation happen here instead? And AwsClientOptionValidation
+        //       just validates that CREDENTIALS_IDENTITY_PROVIDER is set? which is set in finalizeChildConfiguration
+        if (config.option(AwsClientOption.CREDENTIALS_IDENTITY_PROVIDER) != null) {
+            return config.option(AwsClientOption.CREDENTIALS_IDENTITY_PROVIDER);
+        }
+        if (config.option(AwsClientOption.CREDENTIALS_PROVIDER) != null) {
+            return config.option(AwsClientOption.CREDENTIALS_PROVIDER);
+        }
+        return DefaultCredentialsProvider.builder()
+                                         .profileFile(config.option(SdkClientOption.PROFILE_FILE_SUPPLIER))
+                                         .profileName(config.option(SdkClientOption.PROFILE_NAME))
+                                         .build();
     }
 
     private RetryPolicy resolveAwsRetryPolicy(SdkClientConfiguration config) {
@@ -419,6 +428,8 @@ public abstract class AwsDefaultClientBuilder<BuilderT extends AwsClientBuilder<
         fipsEnabled(fipsEndpointEnabled);
     }
 
+    // TODO: Should the existing method just be removed? Anyone passing the sub type would still
+    // use the method with the new super type?
     @Override
     public final BuilderT credentialsProvider(AwsCredentialsProvider credentialsProvider) {
         clientConfiguration.option(AwsClientOption.CREDENTIALS_PROVIDER, credentialsProvider);
@@ -427,6 +438,16 @@ public abstract class AwsDefaultClientBuilder<BuilderT extends AwsClientBuilder<
 
     public final void setCredentialsProvider(AwsCredentialsProvider credentialsProvider) {
         credentialsProvider(credentialsProvider);
+    }
+
+    @Override
+    public final BuilderT credentialsProvider(IdentityProvider<? extends AwsCredentialsIdentity> identityProvider) {
+        clientConfiguration.option(AwsClientOption.CREDENTIALS_IDENTITY_PROVIDER, identityProvider);
+        return thisBuilder();
+    }
+
+    public void setCredentialsProvider(IdentityProvider<? extends AwsCredentialsIdentity> identityProvider) {
+        credentialsProvider(identityProvider);
     }
 
     private List<ExecutionInterceptor> addAwsInterceptors(SdkClientConfiguration config) {

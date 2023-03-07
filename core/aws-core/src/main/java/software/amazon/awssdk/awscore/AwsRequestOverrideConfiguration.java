@@ -20,6 +20,8 @@ import java.util.Optional;
 import software.amazon.awssdk.annotations.SdkPublicApi;
 import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider;
 import software.amazon.awssdk.core.RequestOverrideConfiguration;
+import software.amazon.awssdk.identity.spi.AwsCredentialsIdentity;
+import software.amazon.awssdk.identity.spi.IdentityProvider;
 import software.amazon.awssdk.utils.builder.SdkBuilder;
 
 /**
@@ -58,7 +60,7 @@ public final class AwsRequestOverrideConfiguration extends RequestOverrideConfig
      *
      * @return The optional {@link AwsCredentialsProvider}.
      */
-    public Optional<AwsCredentialsProvider> credentialsProvider() {
+    public Optional<IdentityProvider<? extends AwsCredentialsIdentity>> credentialsProvider() {
         return Optional.ofNullable(credentialsProvider);
     }
 

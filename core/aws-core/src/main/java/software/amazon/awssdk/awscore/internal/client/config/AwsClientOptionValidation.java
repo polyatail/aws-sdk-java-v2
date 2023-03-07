@@ -39,7 +39,11 @@ public final class AwsClientOptionValidation extends SdkClientOptionValidation {
     }
 
     private static void validateClientOptions(SdkClientConfiguration c) {
-        require("credentialsProvider", c.option(AwsClientOption.CREDENTIALS_PROVIDER));
+        if (c.option(AwsClientOption.CREDENTIALS_PROVIDER) != null
+            ^ c.option(AwsClientOption.CREDENTIALS_IDENTITY_PROVIDER) != null) {
+            throw new IllegalArgumentException("Only one of 'credentialsProvider' and 'credentialsIdentity' must be configured "
+                                               + "in the client builder");
+        }
 
         require("overrideConfiguration.advancedOption[AWS_REGION]", c.option(AwsClientOption.AWS_REGION));
         require("overrideConfiguration.advancedOption[SIGNING_REGION]", c.option(AwsClientOption.SIGNING_REGION));
