@@ -15,12 +15,15 @@
 
 package software.amazon.awssdk.core.interceptor;
 
+import java.util.List;
 import software.amazon.awssdk.annotations.SdkProtectedApi;
 import software.amazon.awssdk.core.interceptor.trait.HttpChecksum;
 import software.amazon.awssdk.core.interceptor.trait.HttpChecksumRequired;
 import software.amazon.awssdk.endpoints.Endpoint;
 import software.amazon.awssdk.endpoints.EndpointProvider;
 import software.amazon.awssdk.http.SdkHttpExecutionAttributes;
+import software.amazon.awssdk.http.auth.spi.HttpAuthScheme;
+import software.amazon.awssdk.identity.spi.Identity;
 import software.amazon.awssdk.utils.AttributeMap;
 
 /**
@@ -94,4 +97,5 @@ public final class SdkInternalExecutionAttribute extends SdkExecutionAttribute {
 
     private SdkInternalExecutionAttribute() {
     }
+
 }

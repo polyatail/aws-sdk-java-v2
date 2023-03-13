@@ -15,9 +15,10 @@
 
 package software.amazon.awssdk.http.auth.spi;
 
-import software.amazon.awssdk.annotations.SdkInternalApi;
+import software.amazon.awssdk.identity.spi.Identity;
+import software.amazon.awssdk.identity.spi.IdentityProvider;
 
-// TODO: Remove when where is actual code in this module
-@SdkInternalApi
-public interface Placeholder {
+@FunctionalInterface
+public interface IdentityResolverConfiguration {
+    <T extends Identity> IdentityProvider<T> identityResolver(Class<T> identityType);
 }

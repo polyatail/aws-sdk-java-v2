@@ -18,9 +18,14 @@ package software.amazon.awssdk.awscore.internal;
 import static software.amazon.awssdk.auth.signer.internal.util.SignerMethodResolver.resolveSigningMethodUsed;
 import static software.amazon.awssdk.core.interceptor.SdkExecutionAttribute.RESOLVED_CHECKSUM_SPECS;
 
+import java.time.Duration;
+import java.util.List;
 import software.amazon.awssdk.annotations.SdkInternalApi;
 import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider;
+import software.amazon.awssdk.auth.credentials.CredentialUtils;
 import software.amazon.awssdk.auth.signer.AwsSignerExecutionAttribute;
+import software.amazon.awssdk.auth.token.credentials.SdkToken;
+import software.amazon.awssdk.auth.token.signer.SdkTokenExecutionAttribute;
 import software.amazon.awssdk.awscore.AwsExecutionAttribute;
 import software.amazon.awssdk.awscore.AwsRequestOverrideConfiguration;
 import software.amazon.awssdk.awscore.client.config.AwsClientOption;
@@ -42,10 +47,20 @@ import software.amazon.awssdk.core.interceptor.SdkExecutionAttribute;
 import software.amazon.awssdk.core.interceptor.SdkInternalExecutionAttribute;
 import software.amazon.awssdk.core.internal.InternalCoreExecutionAttribute;
 import software.amazon.awssdk.core.internal.util.HttpChecksumResolver;
+import software.amazon.awssdk.core.internal.util.MetricUtils;
+import software.amazon.awssdk.core.metrics.CoreMetric;
 import software.amazon.awssdk.core.signer.Signer;
+import software.amazon.awssdk.http.auth.AnonymousAuthScheme;
+import software.amazon.awssdk.http.auth.internal.DefaultAwsCredentialIdentityResolverConfig;
+import software.amazon.awssdk.http.auth.spi.HttpAuthScheme;
+import software.amazon.awssdk.http.auth.spi.HttpSigner;
+import software.amazon.awssdk.http.auth.spi.IdentityResolverConfiguration;
 import software.amazon.awssdk.identity.spi.AwsCredentialsIdentity;
+import software.amazon.awssdk.identity.spi.Identity;
 import software.amazon.awssdk.identity.spi.IdentityProvider;
+import software.amazon.awssdk.identity.spi.TokenIdentity;
 import software.amazon.awssdk.metrics.MetricCollector;
+import software.amazon.awssdk.utils.Pair;
 
 @SdkInternalApi
 public final class AwsExecutionContextBuilder {
@@ -116,15 +131,28 @@ public final class AwsExecutionContextBuilder {
                                                      .build();
         interceptorContext = runInitialInterceptors(interceptorContext, executionAttributes, executionInterceptorChain);
 
-        Signer signer = null;
-        if (isAuthenticatedRequest(executionAttributes)) {
-            AuthorizationStrategyFactory authorizationStrategyFactory =
-                new AuthorizationStrategyFactory(interceptorContext.request(), metricCollector, clientConfig);
-            AuthorizationStrategy authorizationStrategy =
-                authorizationStrategyFactory.strategyFor(executionParams.credentialType());
-            authorizationStrategy.addCredentialsToExecutionAttributes(executionAttributes);
-            signer = authorizationStrategy.resolveSigner();
+        HttpSigner signer1 = null;
+        List<HttpAuthScheme<? extends Identity>> authSchemes = clientConfig.option(SdkClientOption.AUTH_SCHEMES);
+        if (isAuthenticatedRequest(authSchemes)) {
+            HttpAuthScheme<? extends Identity> httpAuthScheme = authSchemes.get(0);
+            IdentityProvider<? extends Identity> identityProvider =
+                httpAuthScheme.identityResolver(new DefaultAwsCredentialIdentityResolverConfig());
+
+            Pair<? extends Identity, Duration> measured =
+                MetricUtils.measureDuration(() -> identityProvider.resolveIdentity().join());
+            Identity identity = measured.left();
+            if (identity instanceof AwsCredentialsIdentity) {
+                metricCollector.reportMetric(CoreMetric.CREDENTIALS_FETCH_DURATION, measured.right());
+                executionAttributes.putAttribute(AwsSignerExecutionAttribute.AWS_CREDENTIALS,
+                                                 CredentialUtils.convert((AwsCredentialsIdentity) identity));
+            }
+            else if (identity instanceof TokenIdentity) {
+                metricCollector.reportMetric(CoreMetric.TOKEN_FETCH_DURATION, measured.right());
+                executionAttributes.putAttribute(SdkTokenExecutionAttribute.SDK_TOKEN, (SdkToken) identity);
+            }
+            signer1 = httpAuthScheme.signer();
         }
+        Signer signer;
 
         executionAttributes.putAttribute(HttpChecksumConstant.SIGNING_METHOD,
                                          resolveSigningMethodUsed(
@@ -202,8 +230,8 @@ public final class AwsExecutionContextBuilder {
         return metricCollector;
     }
 
-    private static boolean isAuthenticatedRequest(ExecutionAttributes executionAttributes) {
-        return executionAttributes.getOptionalAttribute(SdkInternalExecutionAttribute.IS_NONE_AUTH_TYPE_REQUEST).orElse(true);
+    private static boolean isAuthenticatedRequest(List<HttpAuthScheme<? extends Identity>> authSchemes) {
+        return authSchemes != null && authSchemes.size() == 1 && !(authSchemes.get(0) instanceof AnonymousAuthScheme);
     }
 
 }

@@ -24,6 +24,7 @@ import java.util.function.Supplier;
 import software.amazon.awssdk.annotations.SdkProtectedApi;
 import software.amazon.awssdk.core.ClientType;
 import software.amazon.awssdk.core.ServiceConfiguration;
+import software.amazon.awssdk.core.interceptor.ExecutionAttribute;
 import software.amazon.awssdk.core.interceptor.ExecutionAttributes;
 import software.amazon.awssdk.core.interceptor.ExecutionInterceptor;
 import software.amazon.awssdk.core.retry.RetryMode;
@@ -31,6 +32,8 @@ import software.amazon.awssdk.core.retry.RetryPolicy;
 import software.amazon.awssdk.endpoints.EndpointProvider;
 import software.amazon.awssdk.http.SdkHttpClient;
 import software.amazon.awssdk.http.async.SdkAsyncHttpClient;
+import software.amazon.awssdk.http.auth.spi.HttpAuthScheme;
+import software.amazon.awssdk.identity.spi.Identity;
 import software.amazon.awssdk.metrics.MetricPublisher;
 import software.amazon.awssdk.profiles.ProfileFile;
 import software.amazon.awssdk.utils.AttributeMap;
@@ -189,6 +192,12 @@ public final class SdkClientOption<T> extends ClientOption<T> {
      */
     public static final SdkClientOption<AttributeMap> CLIENT_CONTEXT_PARAMS =
         new SdkClientOption<>(AttributeMap.class);
+
+    /**
+     * Auth scheme
+     */
+    public static final SdkClientOption<List<HttpAuthScheme<? extends Identity>>> AUTH_SCHEMES =
+        new SdkClientOption<>(new UnsafeValueType(List.class));
 
     private SdkClientOption(Class<T> valueClass) {
         super(valueClass);
