@@ -131,7 +131,7 @@ public final class AwsExecutionContextBuilder {
                                                      .build();
         interceptorContext = runInitialInterceptors(interceptorContext, executionAttributes, executionInterceptorChain);
 
-        HttpSigner signer1 = null;
+        HttpSigner newSigner = null;
         List<HttpAuthScheme<? extends Identity>> authSchemes = clientConfig.option(SdkClientOption.AUTH_SCHEMES);
         if (isAuthenticatedRequest(authSchemes)) {
             HttpAuthScheme<? extends Identity> httpAuthScheme = authSchemes.get(0);
@@ -142,17 +142,18 @@ public final class AwsExecutionContextBuilder {
                 MetricUtils.measureDuration(() -> identityProvider.resolveIdentity().join());
             Identity identity = measured.left();
             if (identity instanceof AwsCredentialsIdentity) {
+                AwsCredentialsIdentity credId = (AwsCredentialsIdentity) identity;
                 metricCollector.reportMetric(CoreMetric.CREDENTIALS_FETCH_DURATION, measured.right());
                 executionAttributes.putAttribute(AwsSignerExecutionAttribute.AWS_CREDENTIALS,
-                                                 CredentialUtils.convert((AwsCredentialsIdentity) identity));
+                                                 CredentialUtils.convert(credId));
             }
             else if (identity instanceof TokenIdentity) {
                 metricCollector.reportMetric(CoreMetric.TOKEN_FETCH_DURATION, measured.right());
                 executionAttributes.putAttribute(SdkTokenExecutionAttribute.SDK_TOKEN, (SdkToken) identity);
             }
-            signer1 = httpAuthScheme.signer();
+            newSigner = httpAuthScheme.signer();
         }
-        Signer signer;
+        Signer signer = clientConfig.option(SdkAdvancedClientOption.SIGNER);
 
         executionAttributes.putAttribute(HttpChecksumConstant.SIGNING_METHOD,
                                          resolveSigningMethodUsed(

@@ -28,6 +28,7 @@ import software.amazon.awssdk.auth.credentials.AwsSessionCredentials;
 import software.amazon.awssdk.services.sso.SsoClient;
 import software.amazon.awssdk.services.sso.internal.SessionCredentialsHolder;
 import software.amazon.awssdk.services.sso.model.GetRoleCredentialsRequest;
+import software.amazon.awssdk.services.sso.model.GetRoleCredentialsResponse;
 import software.amazon.awssdk.services.sso.model.RoleCredentials;
 import software.amazon.awssdk.utils.SdkAutoCloseable;
 import software.amazon.awssdk.utils.builder.CopyableBuilder;
@@ -106,7 +107,8 @@ public final class SsoCredentialsProvider implements AwsCredentialsProvider, Sdk
         RoleCredentials roleCredentials = ssoClient.getRoleCredentials(request).roleCredentials();
         AwsSessionCredentials sessionCredentials = AwsSessionCredentials.create(roleCredentials.accessKeyId(),
                                                                                 roleCredentials.secretAccessKey(),
-                                                                                roleCredentials.sessionToken());
+                                                                                roleCredentials.sessionToken(),
+                                                                                request.accountId());
         return new SessionCredentialsHolder(sessionCredentials, Instant.ofEpochMilli(roleCredentials.expiration()));
     }
 

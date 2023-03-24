@@ -85,7 +85,7 @@ abstract class StsCredentialsProvider implements AwsCredentialsProvider, SdkAuto
      * are close to expiring.
      */
     private RefreshResult<SessionCredentialsHolder> updateSessionCredentials() {
-        SessionCredentialsHolder credentials = new SessionCredentialsHolder(getUpdatedCredentials(stsClient));
+        SessionCredentialsHolder credentials = getUpdatedCredentials(stsClient);
         Instant actualTokenExpiration = credentials.getSessionCredentialsExpiration().toInstant();
 
         return RefreshResult.builder(credentials)
@@ -123,7 +123,7 @@ abstract class StsCredentialsProvider implements AwsCredentialsProvider, SdkAuto
     /**
      * Implemented by a child class to call STS and get a new set of credentials to be used by this provider.
      */
-    protected abstract Credentials getUpdatedCredentials(StsClient stsClient);
+    protected abstract SessionCredentialsHolder getUpdatedCredentials(StsClient stsClient);
 
     /**
      * Extended by child class's builders to share configuration across credential providers.

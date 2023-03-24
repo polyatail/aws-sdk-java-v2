@@ -15,6 +15,8 @@
 
 package software.amazon.awssdk.identity.spi;
 
+import java.time.Instant;
+import java.util.Optional;
 import software.amazon.awssdk.annotations.SdkPublicApi;
 import software.amazon.awssdk.annotations.ThreadSafe;
 
@@ -39,4 +41,8 @@ public interface AwsCredentialsIdentity extends Identity {
      * Retrieve the AWS secret access key, used to authenticate the user interacting with services.
      */
     String secretAccessKey();
+
+    default Optional<String> accountId() {
+        return Optional.empty();
+    }
 }

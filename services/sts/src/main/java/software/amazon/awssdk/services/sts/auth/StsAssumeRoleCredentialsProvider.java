@@ -22,7 +22,9 @@ import software.amazon.awssdk.annotations.SdkPublicApi;
 import software.amazon.awssdk.annotations.ThreadSafe;
 import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider;
 import software.amazon.awssdk.services.sts.StsClient;
+import software.amazon.awssdk.services.sts.endpoints.internal.Arn;
 import software.amazon.awssdk.services.sts.model.AssumeRoleRequest;
+import software.amazon.awssdk.services.sts.model.AssumeRoleResponse;
 import software.amazon.awssdk.services.sts.model.Credentials;
 import software.amazon.awssdk.utils.ToString;
 import software.amazon.awssdk.utils.Validate;
@@ -65,10 +67,16 @@ public final class StsAssumeRoleCredentialsProvider
     }
 
     @Override
-    protected Credentials getUpdatedCredentials(StsClient stsClient) {
+    protected SessionCredentialsHolder getUpdatedCredentials(StsClient stsClient) {
         AssumeRoleRequest assumeRoleRequest = assumeRoleRequestSupplier.get();
         Validate.notNull(assumeRoleRequest, "Assume role request must not be null.");
-        return stsClient.assumeRole(assumeRoleRequest).credentials();
+        AssumeRoleResponse assumeRoleResponse = stsClient.assumeRole(assumeRoleRequest);
+        return SessionCredentialsHolder.builder()
+                                       .credentials(assumeRoleResponse.credentials())
+                                       .accountId(Arn.parse(assumeRoleResponse.assumedRoleUser().arn())
+                                                     .map(Arn::accountId)
+                                                     .orElse(null))
+                                       .build();
     }
 
     @Override

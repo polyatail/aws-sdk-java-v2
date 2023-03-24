@@ -16,6 +16,7 @@
 package software.amazon.awssdk.auth.credentials;
 
 import java.util.Objects;
+import java.util.Optional;
 import software.amazon.awssdk.annotations.Immutable;
 import software.amazon.awssdk.annotations.SdkPublicApi;
 import software.amazon.awssdk.identity.spi.AwsSessionCredentialsIdentity;
@@ -35,10 +36,13 @@ public final class AwsSessionCredentials implements AwsCredentials, AwsSessionCr
     private final String secretAccessKey;
     private final String sessionToken;
 
-    private AwsSessionCredentials(String accessKey, String secretKey, String sessionToken) {
+    private final String accountId;
+
+    private AwsSessionCredentials(String accessKey, String secretKey, String sessionToken, String accountId) {
         this.accessKeyId = Validate.paramNotNull(accessKey, "accessKey");
         this.secretAccessKey = Validate.paramNotNull(secretKey, "secretKey");
         this.sessionToken = Validate.paramNotNull(sessionToken, "sessionToken");
+        this.accountId = accountId;
     }
 
     /**
@@ -50,7 +54,11 @@ public final class AwsSessionCredentials implements AwsCredentials, AwsSessionCr
      * received temporary permission to access some resource.
      */
     public static AwsSessionCredentials create(String accessKey, String secretKey, String sessionToken) {
-        return new AwsSessionCredentials(accessKey, secretKey, sessionToken);
+        return new AwsSessionCredentials(accessKey, secretKey, sessionToken, null);
+    }
+
+    public static AwsSessionCredentials create(String accessKey, String secretKey, String sessionToken, String accountId) {
+        return new AwsSessionCredentials(accessKey, secretKey, sessionToken, accountId);
     }
 
     @Override
@@ -61,6 +69,11 @@ public final class AwsSessionCredentials implements AwsCredentials, AwsSessionCr
     @Override
     public String secretAccessKey() {
         return secretAccessKey;
+    }
+
+    @Override
+    public Optional<String> accountId() {
+        return Optional.of(accountId);
     }
 
     @Override
