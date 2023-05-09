@@ -26,11 +26,13 @@ import org.assertj.core.api.ThrowableAssert;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.slf4j.event.Level;
 import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
 import software.amazon.awssdk.core.async.AsyncResponseTransformer;
 import software.amazon.awssdk.core.exception.ApiCallTimeoutException;
 import software.amazon.awssdk.core.retry.RetryPolicy;
 import software.amazon.awssdk.core.retry.backoff.BackoffStrategy;
+import software.amazon.awssdk.metrics.LoggingMetricPublisher;
 import software.amazon.awssdk.protocol.tests.timeout.BaseApiCallTimeoutTest;
 import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.protocolrestjson.ProtocolRestJsonAsyncClient;
@@ -57,7 +59,8 @@ public class AsyncApiCallTimeoutTest extends BaseApiCallTimeoutTest {
                                             .httpClient(mockClient)
                                             .credentialsProvider(() -> AwsBasicCredentials.create("akid", "skid"))
                                             .overrideConfiguration(b -> b.apiCallTimeout(TIMEOUT)
-                                                                         .retryPolicy(RetryPolicy.none()))
+                                                                         .retryPolicy(RetryPolicy.none())
+                                                .addMetricPublisher(LoggingMetricPublisher.create(Level.ERROR, LoggingMetricPublisher.Format.PRETTY)))
                                             .build();
 
         clientWithRetry = ProtocolRestJsonAsyncClient.builder()
@@ -67,7 +70,8 @@ public class AsyncApiCallTimeoutTest extends BaseApiCallTimeoutTest {
                                                                                   .retryPolicy(RetryPolicy.builder()
                                                                                                           .backoffStrategy(BackoffStrategy.none())
                                                                                                           .numRetries(1)
-                                                                                                          .build()))
+                                                                                                          .build())
+                                                                                  .addMetricPublisher(LoggingMetricPublisher.create(Level.ERROR, LoggingMetricPublisher.Format.PRETTY)))
                                                      .httpClient(mockClient)
                                                      .build();
     }
